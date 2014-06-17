@@ -19,31 +19,47 @@ import webapp2
 form = """
 <form method="post">
 What is your birthday?
-	<br>
-	<label> Month
-		<input name="Month">
-	</label>
+    <br>
+    <label> Month
+        <input name="Month">
+    </label>
 
-	<label> Day
-		<input name="Day">
-	</label
+    <label> Day
+        <input name="Day">
+    </label
 
-	<label> Year
-		<input name="Year">
+    <label> Year
+        <input name="Year">
 
-	</label>
-	<br>
-	<br>
-	<input type="submit">
+    </label>
+    <br>
+    <br>
+    <input type="submit">
 </form>
 """
+
+def escape_html(s):
+    newString = ""
+    for char in s:
+        if char == '>':
+            newString += "&gt;"
+        elif char == '<':
+            newString += "&lt;"
+        elif char == '"':
+            newString += "&quote;"
+        elif char == '&':
+            newString += "&amp;"
+        else: 
+            newString += char
+    return newString
+
 
 class MainHandler(webapp2.RequestHandler):
     def get(self):
         self.response.write(form)
 
     def post(self):
-    	self.response.write("Thanks! That's a totally valid day")
+        self.response.write("Thanks! That's a totally valid day")
 
 app = webapp2.WSGIApplication([
     ('/', MainHandler, )
