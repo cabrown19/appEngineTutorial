@@ -15,52 +15,192 @@
 # limitations under the License.
 #
 import webapp2
+import cgi
+import re
+
+ROTVAL = 13;
 
 form = """
+<h2> Enter some text to ROT%(ROT)s <h2>
 <form method="post">
-What is your birthday?
-    <br>
-    <label> Month
-        <input name="Month">
-    </label>
-
-    <label> Day
-        <input name="Day">
-    </label
-
-    <label> Year
-        <input name="Year">
-
-    </label>
-    <br>
+    <textarea name="text" style="height: 100px; width: 400px;">%(TEXT)s</textarea>
     <br>
     <input type="submit">
 </form>
 """
 
+signupForm = """
+<html><head>
+    <title>Sign Up</title>
+    <style type="text/css">
+      .label {text-align: right}
+      .error {color: red}
+    </style>
+
+  </head>
+
+  <body>
+    <h2>Signup</h2>
+    <form method="post">
+      <table>
+        <tbody><tr>
+          <td class="label">
+            Username
+          </td>
+          <td>
+            <input type="text" name="username" value="%(USER)s">
+          </td>
+          <td class="error">
+            %(UNERROR)s
+          </td>
+        </tr>
+
+        <tr>
+          <td class="label">
+            Password
+          </td>
+          <td>
+            <input type="password" name="password" value="">
+          </td>
+          <td class="error">
+            %(PASSERROR)s
+            
+          </td>
+        </tr>
+
+        <tr>
+          <td class="label">
+            Verify Password
+          </td>
+          <td>
+            <input type="password" name="verify" value="">
+          </td>
+          <td class="error">
+            %(MATCHERROR)s
+            
+          </td>
+        </tr>
+
+        <tr>
+          <td class="label">
+            Email (optional)
+          </td>
+          <td>
+            <input type="text" name="email" value="%(EMAIL)s">
+          </td>
+          <td class="error">
+            %(EMAILERROR)s
+            
+          </td>
+        </tr>
+      </tbody></table>
+
+      <input type="submit">
+    </form>
+  
+
+</body></html>
+"""
+
 def escape_html(s):
+    return cgi.escape(s, quote = True)
+
+def cypher(s):
     newString = ""
     for char in s:
-        if char == '>':
-            newString += "&gt;"
-        elif char == '<':
-            newString += "&lt;"
-        elif char == '"':
-            newString += "&quote;"
-        elif char == '&':
-            newString += "&amp;"
-        else: 
-            newString += char
+        val = ord(char)
+        if val > 64 and val < 91:
+            val = val + 13
+            if val > 90:
+                val = val - 26
+        elif val > 96 and val < 123:
+            val = val + 13
+            if val > 122:
+                val = val - 26
+        newString += chr(val)
     return newString
 
 
+USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
+def valid_username(username):
+    return USER_RE.match(username)
+
+
+PASS_RE = re.compile(r"^.{3,20}$")
+def valid_pass(password):
+    return PASS_RE.match(password)
+
+
+EMAIL_RE = re.compile(r"^[\S]+@[\S]+\.[\S]+$")
+def valid_email(email):
+    return EMAIL_RE.match(email)
+
+
 class MainHandler(webapp2.RequestHandler):
+    def write_form(self, user_text = ""):
+        self.response.write(form %{"ROT": str(ROTVAL), "TEXT": user_text})
+
     def get(self):
-        self.response.write(form)
+        self.write_form()
 
     def post(self):
-        self.response.write("Thanks! That's a totally valid day")
+        user_text = escape_html(cypher(self.request.get('text')))
+        self.write_form(user_text)
+
+class signupHandler(webapp2.RequestHandler):
+    def write_form(self, username = "", email = "", UNe = "", p1e = "", p2e = "", ee = ""):
+        self.response.write(signupForm%{"USER": username, "UNERROR": UNe, "PASSERROR": p1e, "MATCHERROR": p2e, "EMAIL": email, "EMAILERROR": ee})
+
+    def get(self):
+        self.write_form()
+
+    def post(self):
+        user_name = self.request.get('username')
+        user_pass1 = self.request.get('password')
+        user_pass2 = self.request.get('verify')
+        user_email = self.request.get('email')
+
+        valid_name = (valid_username(user_name) != None)
+        valid_pass1 = (valid_pass(user_pass1) != None)
+        valid_pass2 = (user_pass2 == user_pass1) and valid_pass1
+        valid_em = (valid_email(user_email) != None) or (user_email == "")
+
+        if (not valid_name):
+            UNe = "Invalid Username"
+        else:
+            UNe = ""
+        
+        if (not valid_pass1):
+            p1e = "Passord must be between 3 and 20 characters"
+        else: 
+            p1e = ""
+
+        if (not valid_pass2):
+            p2e = "Passords don't match!"
+        else: 
+            p2e = ""
+
+        if (not valid_em):
+            ee = "Invalid Email"
+        else: 
+            ee = ""
+
+        if (valid_name and valid_pass1 and valid_pass2 and valid_em):
+            self.redirect("/hw2p2/welcome?username=%s"%user_name)
+
+        else:
+            self.write_form(user_name, user_email, UNe, p1e, p2e, ee)
+
+        return
+
+class welcomeHandler(webapp2.RequestHandler):
+    def get(self):
+        username = self.request.get("username")
+        self.response.write("<h2> Welcome %s</h2>"%username)
+
 
 app = webapp2.WSGIApplication([
-    ('/', MainHandler, )
+    ('/', MainHandler, ),
+    ('/hw2p2', signupHandler),
+    ('/hw2p2/welcome', welcomeHandler)
 ], debug=True)
