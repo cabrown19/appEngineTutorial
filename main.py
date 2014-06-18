@@ -18,8 +18,7 @@ import webapp2
 import cgi
 import re
 
-ROTVAL = 13;
-
+####################################################################################
 form = """
 <h2> Enter some text to ROT%(ROT)s <h2>
 <form method="post">
@@ -28,7 +27,16 @@ form = """
     <input type="submit">
 </form>
 """
-
+####################################################################################
+ROTform = """
+<h2> What ROT value would you like? <h2>
+<form method="post">
+    <input type="text" name="ROT">
+    <br>
+    <input type="submit">
+</form>
+"""
+####################################################################################
 signupForm = """
 <html><head>
     <title>Sign Up</title>
@@ -97,56 +105,76 @@ signupForm = """
 
       <input type="submit">
     </form>
-  
-
 </body></html>
 """
 
+####################################################################################
 def escape_html(s):
     return cgi.escape(s, quote = True)
 
-def cypher(s):
+####################################################################################
+def cypher(s, rotVal):
     newString = ""
     for char in s:
         val = ord(char)
         if val > 64 and val < 91:
-            val = val + 13
+            val = val + rotVal
             if val > 90:
                 val = val - 26
         elif val > 96 and val < 123:
-            val = val + 13
+            val = val + rotVal
             if val > 122:
                 val = val - 26
         newString += chr(val)
     return newString
 
-
+####################################################################################
 USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
 def valid_username(username):
     return USER_RE.match(username)
 
-
+####################################################################################
 PASS_RE = re.compile(r"^.{3,20}$")
 def valid_pass(password):
     return PASS_RE.match(password)
 
-
+####################################################################################
 EMAIL_RE = re.compile(r"^[\S]+@[\S]+\.[\S]+$")
 def valid_email(email):
     return EMAIL_RE.match(email)
 
-
+####################################################################################
 class MainHandler(webapp2.RequestHandler):
-    def write_form(self, user_text = ""):
-        self.response.write(form %{"ROT": str(ROTVAL), "TEXT": user_text})
+    def get(self):
+        self.response.write("<h2>Welcome to my AppEngine tutorial!</h2>")
+
+####################################################################################
+class ROTnumHandler(webapp2.RequestHandler):
+    def write_form(self):
+        self.response.write(ROTform)
 
     def get(self):
         self.write_form()
 
     def post(self):
-        user_text = escape_html(cypher(self.request.get('text')))
+        rotVal = escape_html(self.request.get('ROT'))
+        self.redirect('/hw2p1/rot?ROT=%s'%rotVal)
+
+####################################################################################
+class ROThandler(webapp2.RequestHandler):
+    def write_form(self, user_text = ""):
+        rotVal = self.request.get("ROT")
+        self.response.write(form %{"ROT": str(rotVal), "TEXT": user_text})
+
+    def get(self):
+        self.write_form()
+
+    def post(self):
+        rotVal = self.request.get("ROT")
+        user_text = escape_html(cypher(self.request.get('text'), int(rotVal)))
         self.write_form(user_text)
 
+####################################################################################
 class signupHandler(webapp2.RequestHandler):
     def write_form(self, username = "", email = "", UNe = "", p1e = "", p2e = "", ee = ""):
         self.response.write(signupForm%{"USER": username, "UNERROR": UNe, "PASSERROR": p1e, "MATCHERROR": p2e, "EMAIL": email, "EMAILERROR": ee})
@@ -193,14 +221,17 @@ class signupHandler(webapp2.RequestHandler):
 
         return
 
+####################################################################################
 class welcomeHandler(webapp2.RequestHandler):
     def get(self):
         username = self.request.get("username")
         self.response.write("<h2> Welcome %s</h2>"%username)
 
-
+####################################################################################
 app = webapp2.WSGIApplication([
     ('/', MainHandler, ),
+    ('/hw2p1', ROTnumHandler),
+    ('/hw2p1/rot', ROThandler),
     ('/hw2p2', signupHandler),
     ('/hw2p2/welcome', welcomeHandler)
 ], debug=True)
