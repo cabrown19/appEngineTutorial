@@ -17,6 +17,8 @@
 import webapp2
 import cgi
 import re
+import os
+import jinja2
 
 ####################################################################################
 form = """
@@ -217,7 +219,7 @@ class signupHandler(webapp2.RequestHandler):
             self.redirect("/hw2p2/welcome?username=%s"%user_name)
 
         else:
-            self.write_form(user_name, user_email, UNe, p1e, p2e, ee)
+            self.write_form(user_name, user_email, UNe, p1e, p2e, ee) 
 
         return
 
@@ -228,10 +230,33 @@ class welcomeHandler(webapp2.RequestHandler):
         self.response.write("<h2> Welcome %s</h2>"%username)
 
 ####################################################################################
+template_dir = os.path.join(os.path.dirname(__file__), 'templates')
+jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir), autoescape)
+
+####################################################################################
+class Handler(webapp2.RequestHandler):
+    def write(self, *a, **kw):
+        self.response.write(*a, **kw)
+
+    def render_str(self, template, **params):
+        t = jinja_env.get_template(template)
+        return t.render(params)
+
+    def render(self, template, **kw):
+        self.write(self.render_str(template, **kw))
+
+####################################################################################
+class l2aHandler(Handler):
+    def get(self):
+        items = self.request.get_all("food")
+        self.render("shopping_list.html", items = items)
+
+####################################################################################
 app = webapp2.WSGIApplication([
     ('/', MainHandler, ),
     ('/hw2p1', ROTnumHandler),
     ('/hw2p1/rot', ROThandler),
     ('/hw2p2', signupHandler),
-    ('/hw2p2/welcome', welcomeHandler)
+    ('/hw2p2/welcome', welcomeHandler),
+    ('/lesson2a', l2aHandler)
 ], debug=True)
