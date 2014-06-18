@@ -231,7 +231,7 @@ class welcomeHandler(webapp2.RequestHandler):
 
 ####################################################################################
 template_dir = os.path.join(os.path.dirname(__file__), 'templates')
-jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir), autoescape)
+jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir), autoescape = True)
 
 ####################################################################################
 class Handler(webapp2.RequestHandler):
@@ -251,6 +251,23 @@ class l2aHandler(Handler):
         items = self.request.get_all("food")
         self.render("shopping_list.html", items = items)
 
+
+
+
+
+###### DATABASES ######
+####################################################################################
+class dbHandler(Handler):
+    def get(self):
+        self.response.write("<h2>Databases!</h2>")
+
+
+
+
+
+
+
+
 ####################################################################################
 app = webapp2.WSGIApplication([
     ('/', MainHandler, ),
@@ -258,5 +275,6 @@ app = webapp2.WSGIApplication([
     ('/hw2p1/rot', ROThandler),
     ('/hw2p2', signupHandler),
     ('/hw2p2/welcome', welcomeHandler),
-    ('/lesson2a', l2aHandler)
+    ('/lesson2a', l2aHandler),
+    ('/databases', dbHandler)
 ], debug=True)
