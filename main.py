@@ -234,6 +234,7 @@ template_dir = os.path.join(os.path.dirname(__file__), 'templates')
 jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir), autoescape = True)
 
 ####################################################################################
+## Our default handler for using jinja
 class Handler(webapp2.RequestHandler):
     def write(self, *a, **kw):
         self.response.write(*a, **kw)
@@ -257,15 +258,46 @@ class l2aHandler(Handler):
 
 ###### DATABASES ######
 ####################################################################################
+
+##Datastore types:
+    #int
+    #float
+    #string
+    #text       string < 500, can be indexed. Text > 500, can't be indexed
+    #date
+    #time
+    #dateTime
+    #email
+    #link
+    #PostalAddress
+
+
+##creating an entity
+class Art(db.Model):
+    title = db.StringProperty(required = True)
+    art = db.TextProperty(required = True)
+    created = db.DateTimeProperty(auto_now_add = True)
+
+## The handler for creating out page
 class dbHandler(Handler):
+    def render_front(self, title="", art="", error=""):
+        ## Input names are reqired if we don't have a specif number of inputs or we aren't filling them all
+        self.render("front.html", title = title, art = art, error = error)
+
     def get(self):
-        self.response.write("<h2>Databases!</h2>")
+       
+        self.render_front()
 
+    def post(self):
+        title = self.request.get("title")
+        art = self.request.get("art")
 
+        if title and art:
+            self.write("thanks!")
 
-
-
-
+        else:
+            error = "we need both a title and some artwork!"
+            self.render_front(title, art, error)
 
 
 ####################################################################################
